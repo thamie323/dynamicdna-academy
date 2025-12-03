@@ -122,136 +122,114 @@ export const appRouter = router({
 learnerApplications: router({
   // Public: Submit application
   submit: publicProcedure
-    .input(
-      z.object({
-        fullName: z.string().min(1),
-        email: z.string().email(),
-        phone: z.string().min(1),
-        idNumber: z.string().min(1),
-        dateOfBirth: z.string().min(1),
-        gender: z.string().min(1),
-        address: z.string().min(1),
-        city: z.string().min(1),
-        province: z.string().min(1),
-        postalCode: z.string().min(1),
-        highestQualification: z.string().min(1),
-        programInterest: z.string().min(1),
-        employmentStatus: z.string().min(1),
-        computerAccess: z.string().min(1),
-        internetAccess: z.string().min(1),
-        motivation: z.string().min(1),
-        hearAboutUs: z.string().optional(),
-      })
-    )
-    .mutation(async ({ input }) => {
-      // 1) Save application (this is the only thing we *await*)
-      const application = await db.createLearnerApplication(input);
+  .input(z.object({
+    fullName: z.string().min(1),
+    email: z.string().email(),
+    phone: z.string().min(1),
+    idNumber: z.string().min(1),
+    dateOfBirth: z.string().min(1),
+    gender: z.string().min(1),
+    address: z.string().min(1),
+    city: z.string().min(1),
+    province: z.string().min(1),
+    postalCode: z.string().min(1),
+    highestQualification: z.string().min(1),
+    programInterest: z.string().min(1),
+    employmentStatus: z.string().min(1),
+    computerAccess: z.string().min(1),
+    internetAccess: z.string().min(1),
+    motivation: z.string().min(1),
+    hearAboutUs: z.string().optional(),
+  }))
+  .mutation(async ({ input }) => {
+    // 1) Save application
+    const application = await db.createLearnerApplication(input);
 
-      // 2) Notify owner – fire-and-forget
-      (async () => {
-        try {
-          await notifyOwner({
-            title: "New Learner Application",
-            content: `New application from ${input.fullName} (${input.email}) for ${input.programInterest}`,
-          });
-        } catch (err) {
-          console.error(
-            "[LearnerApplications] notifyOwner failed (application saved):",
-            err
-          );
-        }
-      })();
+    // 2) Notify owner (do not break request if this fails)
+    try {
+      await notifyOwner({
+        title: "New Learner Application",
+        content: `New application from ${input.fullName} (${input.email}) for ${input.programInterest}`,
+      });
+    } catch (err) {
+      console.error("notifyOwner failed (application still saved):", err);
+    }
 
-      // 3) Email the learner – fire-and-forget
-      (async () => {
-        try {
-          await sendApplicantEmail(
-            input.email,
-            "We received your application – dynamicDNA Academy",
-            `Hi ${input.fullName},
+    // 3) Email the learner a confirmation
+    try {
+      await sendApplicantEmail(
+        input.email,
+        "We received your application – dynamicDNA Academy",
+        `Hi ${input.fullName},
 
 Thank you for applying to dynamicDNA Academy!
 
 We have received your application for the program: ${input.programInterest}.
 Our team will review your details and contact you within 2–3 business days with next steps.
 
-If you have any questions in the meantime, you can reach us at ${
-              ENV.ownerEmail || "enquiries@dynamicdna.co.za"
-            }.
+If you have any questions in the meantime, you can reach us at ${ENV.ownerEmail || "enquiries@dynamicdna.co.za"}.
 
 Kind regards,
 dynamicDNA Academy`
-          );
-        } catch (err) {
-          console.error(
-            "[LearnerApplications] Failed to send learner confirmation email:",
-            err
-          );
-        }
-      })();
-
-      // 4) Return immediately to the frontend
-      return {
-        success: true,
-        id: application.id,
-      };
-    }),
-
-  // Admin: Get all applications
-  getAll: adminProcedure
-    .input(
-      z
-        .object({
-          status: z.enum(["pending", "approved", "declined"]).optional(),
-        })
-        .optional()
-    )
-    .query(async ({ input }) => {
-      return await db.getAllLearnerApplications(input?.status);
-    }),
-
-  // Admin: Get application by ID
-  getById: adminProcedure
-    .input(z.object({ id: z.number() }))
-    .query(async ({ input }) => {
-      return await db.getLearnerApplicationById(input.id);
-    }),
-
-  // Admin: Update application status
-  updateStatus: adminProcedure
-    .input(
-      z.object({
-        id: z.number(),
-        status: z.enum(["pending", "approved", "declined"]),
-        adminNotes: z.string().optional(),
-      })
-    )
-    .mutation(async ({ input, ctx }) => {
-      // 1) Update DB
-      await db.updateLearnerApplicationStatus(
-        input.id,
-        input.status,
-        ctx.user.id,
-        input.adminNotes
       );
+    } catch (err) {
+      console.error("[Email] Failed to send learner confirmation email:", err);
+      // intentionally not throwing
+    }
 
-      // 2) Send email in the background – don’t block response
-      (async () => {
-        try {
-          const application = await db.getLearnerApplicationById(input.id);
-          if (!application) return;
+    // 4) Response to frontend
+    return {
+      success: true,
+      id: application.id,
+    };
+  }),
 
-          const statusLabel: Record<(typeof input)["status"], string> = {
-            pending: "Pending Review",
-            approved: "Approved",
-            declined: "Declined",
-          };
 
-          const subject = `Your application status: ${statusLabel[input.status]} – dynamicDNA Academy`;
+    // Admin: Get all applications
+    getAll: adminProcedure
+      .input(z.object({
+        status: z.enum(["pending", "approved", "declined"]).optional(),
+      }).optional())
+      .query(async ({ input }) => {
+        return await db.getAllLearnerApplications(input?.status);
+      }),
 
-          const body =
-            input.status === "approved"
-              ? `Hi ${application.fullName},
+    // Admin: Get application by ID
+    getById: adminProcedure
+      .input(z.object({ id: z.number() }))
+      .query(async ({ input }) => {
+        return await db.getLearnerApplicationById(input.id);
+      }),
+
+    // Admin: Update application status
+    updateStatus: adminProcedure
+  .input(z.object({
+    id: z.number(),
+    status: z.enum(["pending", "approved", "declined"]),
+    adminNotes: z.string().optional(),
+  }))
+  .mutation(async ({ input, ctx }) => {
+    await db.updateLearnerApplicationStatus(
+      input.id,
+      input.status,
+      ctx.user.id,
+      input.adminNotes
+    );
+
+    // Send email to the learner about the decision
+    const application = await db.getLearnerApplicationById(input.id);
+    if (application) {
+      const statusLabel: Record<(typeof input)["status"], string> = {
+        pending: "Pending Review",
+        approved: "Approved",
+        declined: "Declined",
+      };
+
+      const subject = `Your application status: ${statusLabel[input.status]} – dynamicDNA Academy`;
+
+      const body =
+        input.status === "approved"
+          ? `Hi ${application.fullName},
 
 Great news! Your application to dynamicDNA Academy has been APPROVED.
 
@@ -261,8 +239,8 @@ Our team will contact you shortly with your registration details and next steps.
 
 Kind regards,
 dynamicDNA Academy`
-              : input.status === "declined"
-              ? `Hi ${application.fullName},
+          : input.status === "declined"
+          ? `Hi ${application.fullName},
 
 Thank you for your interest in dynamicDNA Academy.
 
@@ -276,7 +254,7 @@ ${
 
 Kind regards,
 dynamicDNA Academy`
-              : `Hi ${application.fullName},
+          : `Hi ${application.fullName},
 
 Your application status has been updated to: ${statusLabel[input.status]}.
 
@@ -285,71 +263,63 @@ We will keep you informed as your application progresses.
 Kind regards,
 dynamicDNA Academy`;
 
-          await sendApplicantEmail(application.email, subject, body);
-        } catch (err) {
-          console.error(
-            "[LearnerApplications] Failed to send learner status email:",
-            err
-          );
-        }
-      })();
+      try {
+        await sendApplicantEmail(application.email, subject, body);
+      } catch (err) {
+        console.error("[Email] Failed to send learner status email:", err);
+      }
+    }
 
-      return { success: true };
-    }),
-}),
+    return { success: true };
+  }),
+
+  }),
+
  // ==================== CLIENT APPLICATION ROUTES ====================
 clientApplications: router({
   // Public: Submit application
   submit: publicProcedure
-    .input(
-      z.object({
-        companyName: z.string().min(1),
-        registrationNumber: z.string().optional(),
-        industry: z.string().min(1),
-        contactPerson: z.string().min(1),
-        jobTitle: z.string().min(1),
-        email: z.string().email(),
-        phone: z.string().min(1),
-        companyAddress: z.string().min(1),
-        city: z.string().min(1),
-        province: z.string().min(1),
-        postalCode: z.string().min(1),
-        numberOfEmployees: z.string().min(1),
-        trainingNeeds: z.string().min(1),
-        serviceInterest: z.string().min(1),
-        preferredTrainingMode: z.string().min(1),
-        estimatedLearners: z.string().optional(),
-        timeframe: z.string().optional(),
-        budgetRange: z.string().optional(),
-        additionalInfo: z.string().optional(),
-      })
-    )
+    .input(z.object({
+      companyName: z.string().min(1),
+      registrationNumber: z.string().optional(),
+      industry: z.string().min(1),
+      contactPerson: z.string().min(1),
+      jobTitle: z.string().min(1),
+      email: z.string().email(),
+      phone: z.string().min(1),
+      companyAddress: z.string().min(1),
+      city: z.string().min(1),
+      province: z.string().min(1),
+      postalCode: z.string().min(1),
+      numberOfEmployees: z.string().min(1),
+      trainingNeeds: z.string().min(1),
+      serviceInterest: z.string().min(1),
+      preferredTrainingMode: z.string().min(1),
+      estimatedLearners: z.string().optional(),
+      timeframe: z.string().optional(),
+      budgetRange: z.string().optional(),
+      additionalInfo: z.string().optional(),
+    }))
     .mutation(async ({ input }) => {
-      // 1) Save application (only awaited bit)
+      // 1) Save application
       const application = await db.createClientApplication(input);
 
-      // 2) Notify owner – fire-and-forget
-      (async () => {
-        try {
-          await notifyOwner({
-            title: "New Client Application",
-            content: `New application from ${input.companyName} (${input.contactPerson} - ${input.email})`,
-          });
-        } catch (err) {
-          console.error(
-            "[ClientApplications] notifyOwner failed (application saved):",
-            err
-          );
-        }
-      })();
+      // 2) Notify owner (admin) – best effort
+      try {
+        await notifyOwner({
+          title: "New Client Application",
+          content: `New application from ${input.companyName} (${input.contactPerson} - ${input.email})`,
+        });
+      } catch (err) {
+        console.error("notifyOwner (client) failed (application still saved):", err);
+      }
 
-      // 3) Email client – fire-and-forget
-      (async () => {
-        try {
-          await sendApplicantEmail(
-            input.email,
-            "We received your corporate training enquiry",
-            `Hi ${input.contactPerson},
+      // 3) Email client – best effort
+      try {
+        await sendApplicantEmail(
+          input.email,
+          "We received your corporate training enquiry",
+          `Hi ${input.contactPerson},
 
 Thank you for contacting dynamicDNA Academy.
 
@@ -361,116 +331,22 @@ Our team will review your requirements and contact you within 2–3 business day
 to discuss a tailored solution.
 
 If you have any questions in the meantime, you can reach us at ${
-              ENV.ownerEmail || "enquiries@dynamicdna.co.za"
-            }.
+            ENV.ownerEmail || "enquiries@dynamicdna.co.za"
+          }.
 
 Kind regards,
 dynamicDNA Academy Team`
-          );
-        } catch (err) {
-          console.error(
-            "[ClientApplications] Failed to send client confirmation email:",
-            err
-          );
-        }
-      })();
+        );
+      } catch (err) {
+        console.error("[Email] Failed to send client confirmation email:", err);
+        // intentionally not throwing
+      }
 
-      // 4) Return success immediately
       return {
         success: true,
         id: application.id,
       };
     }),
-
-  // Admin: Get all applications
-  getAll: adminProcedure
-    .input(
-      z
-        .object({
-          status: z.enum(["pending", "approved", "declined"]).optional(),
-        })
-        .optional()
-    )
-    .query(async ({ input }) => {
-      return await db.getAllClientApplications(input?.status);
-    }),
-
-  // Admin: Get application by ID
-  getById: adminProcedure
-    .input(z.object({ id: z.number() }))
-    .query(async ({ input }) => {
-      return await db.getClientApplicationById(input.id);
-    }),
-
-  // Admin: Update application status
-  updateStatus: adminProcedure
-    .input(
-      z.object({
-        id: z.number(),
-        status: z.enum(["pending", "approved", "declined"]),
-        adminNotes: z.string().optional(),
-      })
-    )
-    .mutation(async ({ input, ctx }) => {
-      // 1) Update DB
-      await db.updateClientApplicationStatus(
-        input.id,
-        input.status,
-        ctx.user.id,
-        input.adminNotes
-      );
-
-      // 2) Email client about the change – fire-and-forget
-      (async () => {
-        try {
-          const application = await db.getClientApplicationById(input.id);
-          if (!application?.email) return;
-
-          const statusText =
-            input.status === "approved"
-              ? "approved"
-              : input.status === "declined"
-              ? "declined"
-              : "updated";
-
-          const body = `Hi ${application.contactPerson},
-
-The status of your training enquiry with dynamicDNA Academy has been ${statusText}.
-
-Company: ${application.companyName}
-Service interest: ${application.serviceInterest}
-
-Status: ${statusText.toUpperCase()}
-${
-  input.adminNotes
-    ? `\nNotes from our team:\n${input.adminNotes}\n`
-    : ""
-}
-
-If you have any questions, you can reply to this email or contact us at ${
-            ENV.ownerEmail || "enquiries@dynamicdna.co.za"
-          }.
-
-Kind regards,
-dynamicDNA Academy Team`;
-
-          await sendApplicantEmail(
-            application.email,
-            `Your training enquiry has been ${statusText}`,
-            body
-          );
-        } catch (err) {
-          console.error(
-            "[ClientApplications] Failed to send client status email:",
-            err
-          );
-        }
-      })();
-
-      return { success: true };
-    }),
-}),
-
 
   // Admin: Get all applications
   getAll: adminProcedure
