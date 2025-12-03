@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import { COOKIE_NAME, ONE_YEAR_MS } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
-import { sdk } from "./_core/sdk";
+import { SignJWT } from "jose";
 import * as db from "./db";
 
 /**
@@ -13,8 +13,7 @@ import * as db from "./db";
  * Security Note: This bypasses OAuth and should NEVER be used in production.
  */
 export async function handleLocalLogin(req: Request, res: Response) {
-  // Only allow in development mode
-    // Allow in development mode OR if ALLOW_LOCAL_LOGIN is explicitly set
+  // Allow in development mode OR if ALLOW_LOCAL_LOGIN is explicitly set
   // For Railway deployment, set ALLOW_LOCAL_LOGIN=true in environment variables
   const allowLocalLogin = process.env.NODE_ENV === "development" || process.env.ALLOW_LOCAL_LOGIN === "true";
   
@@ -23,7 +22,6 @@ export async function handleLocalLogin(req: Request, res: Response) {
       error: "Local login is not enabled. Set ALLOW_LOCAL_LOGIN=true to enable." 
     });
   }
-
 
   try {
     const { email } = req.body;
@@ -48,11 +46,23 @@ export async function handleLocalLogin(req: Request, res: Response) {
       });
     }
 
-    // Create session token
-    const sessionToken = await sdk.createSessionToken(user.openId, {
+    // Create session token using JWT (Railway-compatible)
+    const jwtSecret = process.env.JWT_SECRET;
+    if (!jwtSecret) {
+      throw new Error("JWT_SECRET environment variable is not set");
+    }
+
+    const secret = new TextEncoder().encode(jwtSecret);
+    const sessionToken = await new SignJWT({
+      openId: user.openId,
       name: user.name || "",
-      expiresInMs: ONE_YEAR_MS,
-    });
+      email: user.email,
+      role: user.role,
+    })
+      .setProtectedHeader({ alg: "HS256" })
+      .setIssuedAt()
+      .setExpirationTime(Math.floor(Date.now() / 1000) + Math.floor(ONE_YEAR_MS / 1000))
+      .sign(secret);
 
     // Set session cookie
     const cookieOptions = getSessionCookieOptions(req);
