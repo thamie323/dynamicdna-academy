@@ -3,20 +3,15 @@ import { Request, Response } from "express";
 import multer from "multer";
 import path from "path";
 import fs from "fs/promises";
-import { fileURLToPath } from "url";   // 👈 add this
 
-// ESM-friendly __dirname
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+// ❌ you no longer need fileURLToPath/__dirname here
 
-// Configure multer for memory storage
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: {
-    fileSize: 5 * 1024 * 1024, // 5MB limit
+    fileSize: 5 * 1024 * 1024, // 5MB
   },
   fileFilter: (_req, file, cb) => {
-    // Accept images only
     if (!file.mimetype.startsWith("image/")) {
       return cb(new Error("Only image files are allowed"));
     }
@@ -32,30 +27,28 @@ export async function handleUpload(req: Request, res: Response) {
       return res.status(400).json({ error: "No file uploaded" });
     }
 
-    // ---- where to save the file ----
-    // server/   -> project root -> client/public/uploads
-    const uploadsDir = path.resolve(__dirname, "..", "client", "public", "uploads");
+    // 🔥 Single source of truth:
+    // this matches server/index.ts → app.use("/uploads", express.static(uploadsPath));
+    const uploadsDir = path.resolve(process.cwd(), "uploads");
     await fs.mkdir(uploadsDir, { recursive: true });
 
-    // Generate unique filename
     const timestamp = Date.now();
     const ext = path.extname(req.file.originalname) || ".png";
     const filename = `${timestamp}${ext}`;
     const filePath = path.join(uploadsDir, filename);
 
-    // Write file to disk
     await fs.writeFile(filePath, req.file.buffer);
 
-    // This is what goes into DB and what the frontend will use
+    // This is what we store in DB and show in frontend
     const url = `/uploads/${filename}`;
 
     return res.json({
       success: true,
-      url,        // 👈 ImageUpload will store this in imageUrl
+      url,
       key: url,
     });
   } catch (error) {
     console.error("Upload error:", error);
-    return res.status(500).json({ error: "Failed to upload file" });
+    return res.status(500).json({ error: "Failed to upload image" });
   }
 }
