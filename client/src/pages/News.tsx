@@ -2,6 +2,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Calendar, ArrowRight, Loader2 } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { Link } from "wouter";
+import { getImageSrc } from "@/lib/imageUtils";
+
 
 const getImageSrc = (imageUrl?: string | null) => {
   if (!imageUrl) return "/about-hero.jpg";

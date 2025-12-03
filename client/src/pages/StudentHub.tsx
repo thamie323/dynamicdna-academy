@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { getImageSrc } from "@/lib/imageUtils";
 import {
   ChevronRight,
   FileText,
@@ -79,18 +80,18 @@ function StudentStoriesBlock() {
                 <CardContent className="p-6">
                   <div className="mb-4">
                     {story.imageUrl ? (
-                      <div className="w-16 h-16 rounded-full overflow-hidden mx-auto mb-4">
-                        <img
-                          src={getImageSrc(story.imageUrl)}
-                          alt={story.studentName}
-                          className="w-full h-full object-cover"
-                        />
-                      </div>
-                    ) : (
-                      <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <Award className="w-8 h-8 text-primary" />
-                      </div>
-                    )}
+  <div className="w-16 h-16 rounded-full overflow-hidden mx-auto mb-4">
+    <img
+      src={getImageSrc(story.imageUrl)}
+      alt={story.studentName}
+      className="w-full h-full object-cover"
+    />
+  </div>
+) : (
+  <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
+    <Award className="w-8 h-8 text-primary" />
+  </div>
+)}
 
                     <h4 className="font-bold text-lg mb-1 text-center">
                       {story.studentName}
