@@ -1,7 +1,9 @@
+// server/index.ts
 import express from "express";
 import { createServer } from "http";
 import path from "path";
 import { fileURLToPath } from "url";
+import { STATIC_ROOT, UPLOADS_ROOT } from "./paths.js"; // 👈 new
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -10,18 +12,12 @@ async function startServer() {
   const app = express();
   const server = createServer(app);
 
-  // Serve static files from dist/public in production
-  const staticPath =
-    process.env.NODE_ENV === "production"
-      ? path.resolve(__dirname, "public")           // dist/public
-      : path.resolve(__dirname, "..", "dist", "public");
-
+  // Serve static files (client build)
+  const staticPath = STATIC_ROOT;
   app.use(express.static(staticPath));
 
-  // ✅ NEW: serve uploaded images
-  // process.cwd() = project root (where you run `node dist/index.js`)
-  const uploadsPath = path.resolve(process.cwd(), "uploads");
-  app.use("/uploads", express.static(uploadsPath));
+  // ✅ Serve uploaded images from the *same* tree
+  app.use("/uploads", express.static(UPLOADS_ROOT));
 
   // Handle client-side routing - serve index.html for all routes
   app.get("*", (_req, res) => {
@@ -32,7 +28,8 @@ async function startServer() {
 
   server.listen(port, () => {
     console.log(`Server running on http://localhost:${port}/`);
-    console.log(`Serving uploads from: ${uploadsPath}`);
+    console.log(`Static root:   ${staticPath}`);
+    console.log(`Uploads root:  ${UPLOADS_ROOT}`);
   });
 }
 

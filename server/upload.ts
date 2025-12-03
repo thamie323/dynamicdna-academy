@@ -3,8 +3,7 @@ import { Request, Response } from "express";
 import multer from "multer";
 import path from "path";
 import fs from "fs/promises";
-
-// ❌ you no longer need fileURLToPath/__dirname here
+import { UPLOADS_ROOT } from "./paths.js"; // 👈 new
 
 const upload = multer({
   storage: multer.memoryStorage(),
@@ -27,9 +26,8 @@ export async function handleUpload(req: Request, res: Response) {
       return res.status(400).json({ error: "No file uploaded" });
     }
 
-    // 🔥 Single source of truth:
-    // this matches server/index.ts → app.use("/uploads", express.static(uploadsPath));
-    const uploadsDir = path.resolve(process.cwd(), "uploads");
+    // 🔥 This is exactly the same folder that Express serves
+    const uploadsDir = UPLOADS_ROOT;
     await fs.mkdir(uploadsDir, { recursive: true });
 
     const timestamp = Date.now();
@@ -39,7 +37,7 @@ export async function handleUpload(req: Request, res: Response) {
 
     await fs.writeFile(filePath, req.file.buffer);
 
-    // This is what we store in DB and show in frontend
+    // URL stored in DB / used by frontend
     const url = `/uploads/${filename}`;
 
     return res.json({
