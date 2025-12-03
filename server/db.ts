@@ -221,17 +221,57 @@ export async function getLearnerApplicationById(id: number) {
   return result.length > 0 ? result[0] : undefined;
 }
 
-export async function createLearnerApplication(applicationData: InsertLearnerApplication) {
+export async function createLearnerApplication(
+  applicationData: InsertLearnerApplication
+) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
 
-  const result = await db.insert(learnerApplications).values(applicationData).$returningId();
+  const now = new Date();
+
+  const result = await db
+    .insert(learnerApplications)
+    .values({
+      // 🔹 form fields
+      fullName: applicationData.fullName,
+      email: applicationData.email,
+      phone: applicationData.phone,
+      idNumber: applicationData.idNumber,
+      dateOfBirth: applicationData.dateOfBirth,       // keep as string if column is VARCHAR
+      gender: applicationData.gender,
+      address: applicationData.address,
+      city: applicationData.city,
+      province: applicationData.province,
+      postalCode: applicationData.postalCode,
+      highestQualification: applicationData.highestQualification,
+      programInterest: applicationData.programInterest,
+      employmentStatus: applicationData.employmentStatus,
+      computerAccess: applicationData.computerAccess,
+      internetAccess: applicationData.internetAccess,
+      motivation: applicationData.motivation,
+      hearAboutUs: applicationData.hearAboutUs ?? null,
+
+      // 🔹 internal fields – don’t rely on DB defaults
+      status: "pending",          // or whatever your enum expects
+      adminNotes: null,
+      reviewedBy: null,
+      reviewedAt: null,
+      createdAt: now,
+      updatedAt: now,
+    })
+    .$returningId();
+
   const insertId = result[0].id;
-  
-  // Fetch and return the inserted record
-  const inserted = await db.select().from(learnerApplications).where(eq(learnerApplications.id, insertId)).limit(1);
-  return inserted[0];
+
+  const [inserted] = await db
+    .select()
+    .from(learnerApplications)
+    .where(eq(learnerApplications.id, insertId))
+    .limit(1);
+
+  return inserted;
 }
+
 
 export async function updateLearnerApplicationStatus(
   id: number, 
@@ -271,17 +311,57 @@ export async function getClientApplicationById(id: number) {
   return result.length > 0 ? result[0] : undefined;
 }
 
-export async function createClientApplication(applicationData: InsertClientApplication) {
+export async function createClientApplication(
+  applicationData: InsertClientApplication
+) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
 
-  const result = await db.insert(clientApplications).values(applicationData).$returningId();
+  const now = new Date();
+
+  const result = await db
+    .insert(clientApplications)
+    .values({
+      companyName: applicationData.companyName,
+      registrationNumber: applicationData.registrationNumber ?? null,
+      industry: applicationData.industry,
+      contactPerson: applicationData.contactPerson,
+      jobTitle: applicationData.jobTitle,
+      email: applicationData.email,
+      phone: applicationData.phone,
+      companyAddress: applicationData.companyAddress,
+      city: applicationData.city,
+      province: applicationData.province,
+      postalCode: applicationData.postalCode,
+      numberOfEmployees: applicationData.numberOfEmployees,
+      trainingNeeds: applicationData.trainingNeeds,
+      serviceInterest: applicationData.serviceInterest,
+      preferredTrainingMode: applicationData.preferredTrainingMode,
+      estimatedLearners: applicationData.estimatedLearners ?? null,
+      timeframe: applicationData.timeframe ?? null,
+      budgetRange: applicationData.budgetRange ?? null,
+      additionalInfo: applicationData.additionalInfo ?? null,
+
+      status: "pending",
+      adminNotes: null,
+      reviewedBy: null,
+      reviewedAt: null,
+      createdAt: now,
+      updatedAt: now,
+    })
+    .$returningId();
+
   const insertId = result[0].id;
-  
-  // Fetch and return the inserted record
-  const inserted = await db.select().from(clientApplications).where(eq(clientApplications.id, insertId)).limit(1);
-  return inserted[0];
+
+  const [inserted] = await db
+    .select()
+    .from(clientApplications)
+    .where(eq(clientApplications.id, insertId))
+    .limit(1);
+
+  return inserted;
 }
+
 
 export async function updateClientApplicationStatus(
   id: number, 
