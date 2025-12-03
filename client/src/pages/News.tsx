@@ -1,18 +1,18 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Calendar, ArrowRight, Loader2 } from "lucide-react";
-import WaveDivider from "@/components/WaveDivider";
 import { trpc } from "@/lib/trpc";
 import { Link } from "wouter";
 
 const getImageSrc = (imageUrl?: string | null) => {
-  if (!imageUrl) return "/about-hero.jpg";            // fallback image in /public
-  if (imageUrl.startsWith("http")) return imageUrl;   // full URL
-  if (imageUrl.startsWith("/")) return imageUrl;      // already absolute (/uploads/...)
-  return `/${imageUrl}`;                              // make "uploads/..." absolute
+  if (!imageUrl) return "/about-hero.jpg";
+  if (imageUrl.startsWith("http")) return imageUrl;
+  if (imageUrl.startsWith("/")) return imageUrl;
+  return `/${imageUrl}`;
 };
 
 export default function News() {
-  const { data: newsArticles, isLoading, error } = trpc.news.getPublished.useQuery();
+  const { data: newsArticles, isLoading, error } =
+    trpc.news.getPublished.useQuery();
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -30,7 +30,7 @@ export default function News() {
 
   return (
     <div className="min-h-screen">
-      {/* Hero Section with Wave Divider */}
+      {/* Hero */}
       <section
         className="relative h-[400px] md:h-[500px] bg-cover bg-center"
         style={{ backgroundImage: "url('/about-hero.jpg')" }}
@@ -42,7 +42,8 @@ export default function News() {
               What's New
             </h1>
             <p className="text-xl md:text-2xl mx-auto opacity-95 text-secondary-foreground">
-              Stay updated with our latest news, success stories, and program announcements
+              Stay updated with our latest news, success stories, and program
+              announcements
             </p>
           </div>
         </div>
@@ -81,7 +82,7 @@ export default function News() {
                   key={article.id}
                   className="group hover:shadow-lg transition-all duration-300 overflow-hidden"
                 >
-                  {/* Article Image */}
+                  {/* Image */}
                   <div className="relative h-48 overflow-hidden">
                     <img
                       src={getImageSrc(article.imageUrl)}
