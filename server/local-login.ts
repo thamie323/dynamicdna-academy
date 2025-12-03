@@ -13,13 +13,13 @@ import * as db from "./db";
  * Security Note: This bypasses OAuth and should NEVER be used in production.
  */
 export async function handleLocalLogin(req: Request, res: Response) {
-  // Allow in development mode OR if ALLOW_LOCAL_LOGIN is explicitly set
-  // For Railway deployment, set ALLOW_LOCAL_LOGIN=true in environment variables
-  const allowLocalLogin = process.env.NODE_ENV === "development" || process.env.ALLOW_LOCAL_LOGIN === "true";
-  
+  const allowLocalLogin =
+    process.env.NODE_ENV === "development" ||
+    process.env.ALLOW_LOCAL_LOGIN === "true";
+
   if (!allowLocalLogin) {
-    return res.status(403).json({ 
-      error: "Local login is not enabled. Set ALLOW_LOCAL_LOGIN=true to enable." 
+    return res.status(403).json({
+      error: "Local login is not enabled. Set ALLOW_LOCAL_LOGIN=true to enable.",
     });
   }
 
@@ -34,43 +34,50 @@ export async function handleLocalLogin(req: Request, res: Response) {
     const user = await db.getUserByEmail(email);
 
     if (!user) {
-      return res.status(404).json({ 
-        error: "User not found. Please check your email or create a user in the database first." 
+      return res.status(404).json({
+        error:
+          "User not found. Please check your email or create a user in the database first.",
       });
     }
 
-    // Check if user is an admin
     if (user.role !== "admin") {
-      return res.status(403).json({ 
-        error: "Access denied. Only admin users can log in." 
+      return res.status(403).json({
+        error: "Access denied. Only admin users can log in.",
       });
     }
 
-    // Create session token using JWT (Railway-compatible)
+    // ✅ Always have a non-empty openId for the session
+    const openId = user.openId || `local:${user.email}`;
+
     const jwtSecret = process.env.JWT_SECRET;
     if (!jwtSecret) {
       throw new Error("JWT_SECRET environment variable is not set");
     }
 
     const secret = new TextEncoder().encode(jwtSecret);
+
     const sessionToken = await new SignJWT({
-      openId: user.openId,
+      openId,                         // ✅ use our fallback value
       name: user.name || "",
       email: user.email,
       role: user.role,
     })
       .setProtectedHeader({ alg: "HS256" })
       .setIssuedAt()
-      .setExpirationTime(Math.floor(Date.now() / 1000) + Math.floor(ONE_YEAR_MS / 1000))
+      .setExpirationTime(
+        Math.floor(Date.now() / 1000) + Math.floor(ONE_YEAR_MS / 1000)
+      )
       .sign(secret);
 
-    // Set session cookie
     const cookieOptions = getSessionCookieOptions(req);
-    res.cookie(COOKIE_NAME, sessionToken, { ...cookieOptions, maxAge: ONE_YEAR_MS });
+    res.cookie(COOKIE_NAME, sessionToken, {
+      ...cookieOptions,
+      maxAge: ONE_YEAR_MS,
+    });
 
-    // Update user's last signed in timestamp
+    // ✅ keep DB in sync with the same openId
     await db.upsertUser({
-      openId: user.openId,
+      openId,
       name: user.name,
       email: user.email,
       loginMethod: user.loginMethod,
@@ -88,8 +95,9 @@ export async function handleLocalLogin(req: Request, res: Response) {
     });
   } catch (error) {
     console.error("Local login error:", error);
-    return res.status(500).json({ 
-      error: "Internal server error during login" 
+    return res.status(500).json({
+      error: "Internal server error during login",
     });
   }
 }
+
