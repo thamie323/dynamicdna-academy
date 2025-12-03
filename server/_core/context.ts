@@ -1,10 +1,10 @@
 // server/_core/context.ts
 import type { CreateExpressContextOptions } from "@trpc/server/adapters/express";
 import type { User } from "../../drizzle/schema";
-import { jwtVerify } from "jose";
-import { COOKIE_NAME } from "@shared/const";
-import * as db from "../db";          // adjust path if needed
 import { sdk } from "./sdk";
+import { COOKIE_NAME } from "@shared/const";
+import { jwtVerify } from "jose";
+import * as db from "../db";
 
 export type TrpcContext = {
   req: CreateExpressContextOptions["req"];
@@ -13,29 +13,44 @@ export type TrpcContext = {
 };
 
 async function getUserFromLocalJwt(
-  req: CreateExpressContextOptions["req"]
+  opts: CreateExpressContextOptions
 ): Promise<User | null> {
-  const token = req.cookies?.[COOKIE_NAME];
-  if (!token) return null;
-
+  const cookieHeader = opts.req.headers.cookie ?? "";
   const jwtSecret = process.env.JWT_SECRET;
+
   if (!jwtSecret) {
-    console.warn("[Auth] JWT_SECRET is not set; cannot verify local session");
+    console.error("[Auth] JWT_SECRET is not set – cannot verify local JWT");
+    return null;
+  }
+
+  // crude cookie parse (works fine for our single cookie)
+  const cookies = Object.fromEntries(
+    cookieHeader
+      .split(";")
+      .map(c => c.trim())
+      .filter(Boolean)
+      .map(c => {
+        const [k, ...rest] = c.split("=");
+        return [decodeURIComponent(k), rest.join("=")];
+      })
+  );
+
+  const token = cookies[COOKIE_NAME];
+  if (!token) {
     return null;
   }
 
   try {
     const secret = new TextEncoder().encode(jwtSecret);
     const { payload } = await jwtVerify(token, secret);
-    const p = payload as any;
 
-    const email = typeof p.email === "string" ? p.email : null;
+    const email = payload.email as string | undefined;
     if (!email) {
-      console.warn("[Auth] Local JWT missing email", payload);
+      console.warn("[Auth] Local JWT missing email");
       return null;
     }
 
-    // pull the real user row from DB – keeps type correct
+    // get full User row from DB (type-safe)
     const user = await db.getUserByEmail(email);
     if (!user) {
       console.warn("[Auth] Local JWT email not found in DB:", email);
@@ -44,7 +59,7 @@ async function getUserFromLocalJwt(
 
     return user;
   } catch (err) {
-    console.warn("[Auth] Failed to verify local JWT session:", err);
+    console.error("[Auth] Failed to verify local JWT cookie:", err);
     return null;
   }
 }
@@ -52,23 +67,27 @@ async function getUserFromLocalJwt(
 export async function createContext(
   opts: CreateExpressContextOptions
 ): Promise<TrpcContext> {
-  const { req, res } = opts;
   let user: User | null = null;
 
-  // 1️⃣ Try our own JWT-based local login first
-  if (process.env.ALLOW_LOCAL_LOGIN === "true") {
-    user = await getUserFromLocalJwt(req);
-  }
+  const allowLocalLogin =
+    process.env.NODE_ENV === "development" ||
+    process.env.ALLOW_LOCAL_LOGIN === "true";
 
-  // 2️⃣ If no user from JWT, fall back to the Manus SDK (OAuth)
-  if (!user) {
+  if (allowLocalLogin) {
+    // 🔑 When ALLOW_LOCAL_LOGIN is on, prefer our own JWT cookie
+    user = await getUserFromLocalJwt(opts);
+  } else {
+    // normal cloud / OAuth path
     try {
-      user = await sdk.authenticateRequest(req);
-    } catch (error) {
-      // Authentication is optional for public procedures.
+      user = await sdk.authenticateRequest(opts.req);
+    } catch {
       user = null;
     }
   }
 
-  return { req, res, user };
+  return {
+    req: opts.req,
+    res: opts.res,
+    user,
+  };
 }
