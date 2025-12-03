@@ -52,12 +52,22 @@ const validatePayload = (input: NotificationPayload): NotificationPayload => {
 const transporter = nodemailer.createTransport({
   host: ENV.smtpHost,
   port: Number(ENV.smtpPort) || 587,
-  secure: false,
+  secure: Number(ENV.smtpPort) === 465, // TLS only for 465
   auth: {
     user: ENV.smtpUser,
     pass: ENV.smtpPass,
   },
 });
+
+// Optional: log SMTP status on boot
+transporter
+  .verify()
+  .then(() => {
+    console.log("[SMTP] Connection OK");
+  })
+  .catch((err) => {
+    console.error("[SMTP] Connection failed:", err);
+  });
 
 // ✅ Owner notification (already used)
 export async function notifyOwner(
