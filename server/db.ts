@@ -229,15 +229,16 @@ export async function createLearnerApplication(
 
   const now = new Date();
 
+  // Build the insert object explicitly so we control every column
   const result = await db
     .insert(learnerApplications)
     .values({
-      // 🔹 form fields
+      // 🔹 User-supplied fields
       fullName: applicationData.fullName,
       email: applicationData.email,
       phone: applicationData.phone,
       idNumber: applicationData.idNumber,
-      dateOfBirth: applicationData.dateOfBirth,       // keep as string if column is VARCHAR
+      dateOfBirth: applicationData.dateOfBirth,
       gender: applicationData.gender,
       address: applicationData.address,
       city: applicationData.city,
@@ -251,11 +252,14 @@ export async function createLearnerApplication(
       motivation: applicationData.motivation,
       hearAboutUs: applicationData.hearAboutUs ?? null,
 
-      // 🔹 internal fields – don’t rely on DB defaults
-      status: "pending",          // or whatever your enum expects
-      adminNotes: null,
-      reviewedBy: null,
-      reviewedAt: null,
+      // 🔹 System / admin fields – make them *always* valid
+      status: "pending",      // every new application starts as pending
+      adminNotes: null,       // nothing yet
+      reviewedBy: null,       // no admin has touched it
+      reviewedAt: null,       // not reviewed
+
+      // if your schema already has defaultNow/onUpdateNow you can omit these,
+      // but it's also fine to set them:
       createdAt: now,
       updatedAt: now,
     })
@@ -271,7 +275,6 @@ export async function createLearnerApplication(
 
   return inserted;
 }
-
 
 export async function updateLearnerApplicationStatus(
   id: number, 
