@@ -1,0 +1,93 @@
+CREATE TABLE `client_applications` (
+	`id` int AUTO_INCREMENT NOT NULL,
+	`companyName` varchar(255) NOT NULL,
+	`registrationNumber` varchar(100),
+	`industry` varchar(255) NOT NULL,
+	`contactPerson` varchar(255) NOT NULL,
+	`jobTitle` varchar(255) NOT NULL,
+	`email` varchar(320) NOT NULL,
+	`phone` varchar(50) NOT NULL,
+	`companyAddress` text NOT NULL,
+	`city` varchar(100) NOT NULL,
+	`province` varchar(100) NOT NULL,
+	`postalCode` varchar(20) NOT NULL,
+	`numberOfEmployees` varchar(50) NOT NULL,
+	`trainingNeeds` text NOT NULL,
+	`serviceInterest` varchar(255) NOT NULL,
+	`preferredTrainingMode` varchar(100) NOT NULL,
+	`estimatedLearners` varchar(50),
+	`timeframe` varchar(100),
+	`budgetRange` varchar(100),
+	`additionalInfo` text,
+	`status` enum('pending','approved','declined') NOT NULL DEFAULT 'pending',
+	`adminNotes` text,
+	`reviewedBy` int,
+	`reviewedAt` timestamp,
+	`createdAt` timestamp NOT NULL DEFAULT (now()),
+	`updatedAt` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP,
+	CONSTRAINT `client_applications_id` PRIMARY KEY(`id`)
+);
+--> statement-breakpoint
+CREATE TABLE `learner_applications` (
+	`id` int AUTO_INCREMENT NOT NULL,
+	`fullName` varchar(255) NOT NULL,
+	`email` varchar(320) NOT NULL,
+	`phone` varchar(50) NOT NULL,
+	`idNumber` varchar(50) NOT NULL,
+	`dateOfBirth` varchar(50) NOT NULL,
+	`gender` varchar(20) NOT NULL,
+	`address` text NOT NULL,
+	`city` varchar(100) NOT NULL,
+	`province` varchar(100) NOT NULL,
+	`postalCode` varchar(20) NOT NULL,
+	`highestQualification` varchar(255) NOT NULL,
+	`programInterest` varchar(255) NOT NULL,
+	`employmentStatus` varchar(100) NOT NULL,
+	`computerAccess` varchar(50) NOT NULL,
+	`internetAccess` varchar(50) NOT NULL,
+	`motivation` text NOT NULL,
+	`hearAboutUs` varchar(255),
+	`status` enum('pending','approved','declined') NOT NULL DEFAULT 'pending',
+	`adminNotes` text,
+	`reviewedBy` int,
+	`reviewedAt` timestamp,
+	`createdAt` timestamp NOT NULL DEFAULT (now()),
+	`updatedAt` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP,
+	CONSTRAINT `learner_applications_id` PRIMARY KEY(`id`)
+);
+--> statement-breakpoint
+CREATE TABLE `news` (
+	`id` int AUTO_INCREMENT NOT NULL,
+	`title` varchar(255) NOT NULL,
+	`slug` varchar(255) NOT NULL,
+	`excerpt` text NOT NULL,
+	`content` text NOT NULL,
+	`imageUrl` varchar(500),
+	`category` varchar(100) NOT NULL DEFAULT 'General',
+	`published` boolean NOT NULL DEFAULT false,
+	`authorId` int NOT NULL,
+	`createdAt` timestamp NOT NULL DEFAULT (now()),
+	`updatedAt` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP,
+	`publishedAt` timestamp,
+	CONSTRAINT `news_id` PRIMARY KEY(`id`),
+	CONSTRAINT `news_slug_unique` UNIQUE(`slug`)
+);
+--> statement-breakpoint
+CREATE TABLE `student_stories` (
+	`id` int AUTO_INCREMENT NOT NULL,
+	`studentName` varchar(255) NOT NULL,
+	`program` varchar(255) NOT NULL,
+	`graduationYear` int NOT NULL,
+	`currentPosition` varchar(255),
+	`company` varchar(255),
+	`imageUrl` varchar(500),
+	`story` text NOT NULL,
+	`quote` text,
+	`featured` boolean NOT NULL DEFAULT false,
+	`published` boolean NOT NULL DEFAULT false,
+	`createdAt` timestamp NOT NULL DEFAULT (now()),
+	`updatedAt` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP,
+	CONSTRAINT `student_stories_id` PRIMARY KEY(`id`)
+);
+--> statement-breakpoint
+ALTER TABLE `users` MODIFY COLUMN `role` enum('user','admin') NOT NULL DEFAULT 'admin';
