@@ -13,10 +13,15 @@ async function startServer() {
   // Serve static files from dist/public in production
   const staticPath =
     process.env.NODE_ENV === "production"
-      ? path.resolve(__dirname, "public")
+      ? path.resolve(__dirname, "public")           // dist/public
       : path.resolve(__dirname, "..", "dist", "public");
 
   app.use(express.static(staticPath));
+
+  // ✅ NEW: serve uploaded images
+  // process.cwd() = project root (where you run `node dist/index.js`)
+  const uploadsPath = path.resolve(process.cwd(), "uploads");
+  app.use("/uploads", express.static(uploadsPath));
 
   // Handle client-side routing - serve index.html for all routes
   app.get("*", (_req, res) => {
@@ -27,6 +32,7 @@ async function startServer() {
 
   server.listen(port, () => {
     console.log(`Server running on http://localhost:${port}/`);
+    console.log(`Serving uploads from: ${uploadsPath}`);
   });
 }
 
