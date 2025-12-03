@@ -266,53 +266,86 @@ export default function AdminNews() {
             <CardTitle>All News Articles ({newsList?.length || 0})</CardTitle>
           </CardHeader>
           <CardContent>
-            {!newsList || newsList.length === 0 ? (
-              <p className="text-center text-muted-foreground py-8">No news articles yet. Create your first one!</p>
-            ) : (
-              <div className="space-y-4">
-                {newsList.map((news) => (
-  <div
-    key={news.id}
-    className="border rounded-lg p-4 flex items-start justify-between gap-4"
-  >
-    {/* 👉 Image on the left (if present) */}
-    {news.imageUrl && (
-      <img
-        src={getImageSrc(news.imageUrl)}
-        alt={news.title}
-        className="w-32 h-24 object-cover rounded-md flex-shrink-0"
-      />
-    )}
+  {!newsList || newsList.length === 0 ? (
+    <p className="text-center text-muted-foreground py-8">
+      No news articles yet. Create your first one!
+    </p>
+  ) : (
+    <div className="space-y-4">
+      {newsList.map((news) => (
+        <div
+          key={news.id}
+          className="border rounded-lg p-4 flex items-start justify-between gap-4"
+        >
+          {/* Thumbnail + preview dialog */}
+          {news.imageUrl ? (
+            <Dialog>
+              <DialogTrigger asChild>
+                <button className="relative group focus:outline-none flex-shrink-0">
+                  <img
+                    src={getImageSrc(news.imageUrl)}
+                    alt={news.title}
+                    className="w-32 h-24 object-cover rounded-md border"
+                  />
+                  {/* Hover overlay with Eye icon */}
+                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center rounded-md">
+                    <Eye className="w-5 h-5 text-white" />
+                  </div>
+                </button>
+              </DialogTrigger>
+              <DialogContent className="max-w-3xl">
+                <DialogHeader>
+                  <DialogTitle>{news.title}</DialogTitle>
+                </DialogHeader>
+                <img
+                  src={getImageSrc(news.imageUrl)}
+                  alt={news.title}
+                  className="w-full h-auto object-contain rounded-md"
+                />
+              </DialogContent>
+            </Dialog>
+          ) : (
+            <div className="w-32 h-24 flex-shrink-0 bg-muted rounded-md flex items-center justify-center text-xs text-muted-foreground">
+              No image
+            </div>
+          )}
 
-    <div className="flex-1">
-      <div className="flex items-center gap-2 mb-2">
-        <h3 className="font-semibold text-lg">{news.title}</h3>
-        <Badge variant={news.published ? "default" : "secondary"}>
-          {news.published ? 'Published' : 'Draft'}
-        </Badge>
-        <Badge variant="outline">{news.category}</Badge>
-      </div>
-      <p className="text-sm text-muted-foreground mb-2">{news.excerpt}</p>
-      <p className="text-xs text-muted-foreground">
-        Created: {new Date(news.createdAt).toLocaleDateString()}
-      </p>
+          {/* Text/content */}
+          <div className="flex-1">
+            <div className="flex items-center gap-2 mb-2 flex-wrap">
+              <h3 className="font-semibold text-lg">{news.title}</h3>
+              <Badge variant={news.published ? "default" : "secondary"}>
+                {news.published ? "Published" : "Draft"}
+              </Badge>
+              <Badge variant="outline">{news.category}</Badge>
+            </div>
+            <p className="text-sm text-muted-foreground mb-2 line-clamp-2">
+              {news.excerpt}
+            </p>
+            <p className="text-xs text-muted-foreground">
+              Created: {new Date(news.createdAt).toLocaleDateString()}
+            </p>
+          </div>
+
+          {/* Actions */}
+          <div className="flex flex-col gap-2">
+            <Button variant="outline" size="sm" onClick={() => handleEdit(news)}>
+              <Edit className="w-4 h-4" />
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => handleDelete(news.id)}
+            >
+              <Trash2 className="w-4 h-4" />
+            </Button>
+          </div>
+        </div>
+      ))}
     </div>
+  )}
+</CardContent>
 
-    <div className="flex gap-2">
-      {/* Edit/Delete buttons stay the same */}
-      <Button variant="outline" size="sm" onClick={() => handleEdit(news)}>
-        <Edit className="w-4 h-4" />
-      </Button>
-      <Button variant="outline" size="sm" onClick={() => handleDelete(news.id)}>
-        <Trash2 className="w-4 h-4" />
-      </Button>
-    </div>
-  </div>
-))}
-
-              </div>
-            )}
-          </CardContent>
         </Card>
       </div>
     </div>
