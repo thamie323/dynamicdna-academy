@@ -14,11 +14,16 @@ import * as db from "./db";
  */
 export async function handleLocalLogin(req: Request, res: Response) {
   // Only allow in development mode
-  if (process.env.NODE_ENV !== "development") {
+    // Allow in development mode OR if ALLOW_LOCAL_LOGIN is explicitly set
+  // For Railway deployment, set ALLOW_LOCAL_LOGIN=true in environment variables
+  const allowLocalLogin = process.env.NODE_ENV === "development" || process.env.ALLOW_LOCAL_LOGIN === "true";
+  
+  if (!allowLocalLogin) {
     return res.status(403).json({ 
-      error: "Local login is only available in development mode" 
+      error: "Local login is not enabled. Set ALLOW_LOCAL_LOGIN=true to enable." 
     });
   }
+
 
   try {
     const { email } = req.body;
