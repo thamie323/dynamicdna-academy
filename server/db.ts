@@ -255,7 +255,7 @@ export async function createLearnerApplication(
       // 🔹 System / admin fields – make them *always* valid
       status: "pending",      // every new application starts as pending
       adminNotes: null,       // nothing yet
-      reviewedBy: null,       // no admin has touched it
+      reviewedBy: 0,       // no admin has touched it
       reviewedAt: null,       // not reviewed
 
       // if your schema already has defaultNow/onUpdateNow you can omit these,
