@@ -5,13 +5,6 @@ import { Link } from "wouter";
 import { getImageSrc } from "@/lib/imageUtils";
 
 
-const getImageSrc = (imageUrl?: string | null) => {
-  if (!imageUrl) return "/about-hero.jpg";
-  if (imageUrl.startsWith("http")) return imageUrl;
-  if (imageUrl.startsWith("/")) return imageUrl;
-  return `/${imageUrl}`;
-};
-
 export default function News() {
   const { data: newsArticles, isLoading, error } =
     trpc.news.getPublished.useQuery();
