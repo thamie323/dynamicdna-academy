@@ -3,7 +3,7 @@ import express from "express";
 import { createServer } from "http";
 import path from "path";
 import { fileURLToPath } from "url";
-import { STATIC_ROOT, UPLOADS_ROOT } from "./paths.js"; // 👈 new
+import { STATIC_ROOT, UPLOADS_ROOT } from "./paths.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -12,14 +12,15 @@ async function startServer() {
   const app = express();
   const server = createServer(app);
 
-  // Serve static files (client build)
   const staticPath = STATIC_ROOT;
-  app.use(express.static(staticPath));
 
-  // ✅ Serve uploaded images from the *same* tree
+  // ✅ 1) Serve uploaded images
   app.use("/uploads", express.static(UPLOADS_ROOT));
 
-  // Handle client-side routing - serve index.html for all routes
+  // ✅ 2) Serve built client
+  app.use(express.static(staticPath));
+
+  // ✅ 3) SPA fallback
   app.get("*", (_req, res) => {
     res.sendFile(path.join(staticPath, "index.html"));
   });
