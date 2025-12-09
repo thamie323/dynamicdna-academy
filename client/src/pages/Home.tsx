@@ -69,7 +69,11 @@ export default function Home() {
   return (
     <div className="min-h-screen">
       {/* Hero Section with Large Image */}
-      <section className="relative bg-gradient-to-r from-[#D2691E] to-[#FF8C00] text-primary-foreground">
+      <section
+  className="relative bg-gradient-to-r
+             from-[oklch(81.883%_0.15708_90.103)]
+             to-[oklch(76%_0.15708_90.103)]
+             text-primary-foreground">
         <div className="container mx-auto px-4 py-20">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             <div className="z-10">
