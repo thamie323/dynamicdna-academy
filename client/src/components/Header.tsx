@@ -82,8 +82,8 @@ export default function Header() {
               <img src={APP_LOGO} alt="DNAcademy" className="h-12 w-auto" />
               <div className="flex flex-col">
                 <span className="text-xl font-bold">
-                  <span className="text-primary">DNA</span>
-                  <span className="text-secondary">cademy</span>
+                  <span className="text-primary">DN</span>
+                  <span className="text-secondary">Academy</span>
                 </span>
                 <span className="text-xs text-muted-foreground hidden sm:inline">Digital Skills Training</span>
               </div>
