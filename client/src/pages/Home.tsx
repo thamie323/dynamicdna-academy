@@ -69,45 +69,59 @@ export default function Home() {
   return (
     <div className="min-h-screen">
       {/* Hero Section with Large Image */}
-      <section
-  className="relative bg-gradient-to-r
-             from-[oklch(81.883%_0.15708_90.103)]
-             to-[oklch(76%_0.15708_90.103)]
-             text-primary-foreground">
-        <div className="container mx-auto px-4 py-20">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-            <div className="z-10">
-              <p className="text-sm font-semibold mb-4 opacity-90">Leading Digital Skills Training</p>
-              <h1 className="text-5xl lg:text-6xl font-bold mb-6">
-                Shape Your Digital Future
-              </h1>
-              <p className="text-xl mb-8 opacity-90">
-                Empowering individuals and organizations through cutting-edge technology education and professional development programs
-              </p>
-              <div className="flex flex-wrap gap-4">
-                <Link href="/programs">
-                  <Button size="lg" className="bg-secondary hover:bg-secondary/90 text-secondary-foreground">
-                    Training Programs
-                  </Button>
-                </Link>
-                <Link href="/courses">
-                  <Button size="lg" variant="outline" className="bg-transparent border-2 border-white text-white hover:bg-white hover:text-primary">
-                    Professional Courses
-                  </Button>
-                </Link>
-              </div>
-            </div>
+      <section className="relative overflow-hidden text-primary-foreground">
+  {/* Background image */}
+  <div className="absolute inset-0 bg-[url('/Background.png')] bg-cover bg-center" />
 
-            <div className="relative lg:absolute lg:right-0 lg:top-0 lg:bottom-0 lg:w-1/2">
-              <img
-                src="/hero-slider-1.jpg"
-                alt="Students learning in modern classroom"
-                className="w-full h-full object-cover rounded-2xl lg:rounded-none"
-              />
-            </div>
-          </div>
+  {/* Brand overlay using your OKLCH navy */}
+  <div className="absolute inset-0 bg-[oklch(36.523%_0.16695_271.824)]/80" />
+
+  <div className="relative container mx-auto px-4 py-20">
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+      <div className="z-10">
+        <p className="text-sm font-semibold mb-4 opacity-90">
+          Leading Digital Skills Training
+        </p>
+        <h1 className="text-5xl lg:text-6xl font-bold mb-6">
+          Shape Your Digital Future
+        </h1>
+        <p className="text-xl mb-8 opacity-90">
+          Empowering individuals and organizations through cutting-edge
+          technology education and professional development programs
+        </p>
+        <div className="flex flex-wrap gap-4">
+          <Link href="/programs">
+            <Button
+              size="lg"
+              className="bg-secondary hover:bg-secondary/90 text-secondary-foreground"
+            >
+              Training Programs
+            </Button>
+          </Link>
+          <Link href="/courses">
+            <Button
+              size="lg"
+              variant="outline"
+              className="bg-transparent border-2 border-white text-white hover:bg-white hover:text-primary"
+            >
+              Professional Courses
+            </Button>
+          </Link>
         </div>
-      </section>
+      </div>
+
+      {/* Learner image – size/position kept as is */}
+      <div className="relative lg:absolute lg:right-0 lg:top-0 lg:bottom-0 lg:w-1/2">
+        <img
+          src="/hero-slider-1.jpg"
+          alt="Students learning in modern classroom"
+          className="w-full h-full object-cover rounded-2xl lg:rounded-none"
+        />
+      </div>
+    </div>
+  </div>
+</section>
+
 
       {/* Programs Section */}
       <section className="py-20 bg-background">
